@@ -4,7 +4,16 @@
 # ISS Program, SADT, SAIT
 # August 2022
 
+;this script compiles and runs x86 assembly
 
+;Input validation: Check if the assembly filename contains only alphanumeric chracters and underscores
+validate_input() {
+    if [[ ! $1 =~ ^[a-zA-Z0-9_]+$ ]]; then
+        echo "Invalid asembly filename."
+        exit 1
+    fi
+}
+;This is to check if there are at least 1 command-line arguement; if not, display usage instructions
 if [ $# -lt 1 ]; then
 	echo "Usage:"
 	echo ""
@@ -20,7 +29,7 @@ if [ $# -lt 1 ]; then
 
 	exit 1
 fi
-
+;This initializes variabes
 POSITIONAL_ARGS=()
 GDB=False
 OUTPUT_FILE=""
@@ -29,6 +38,7 @@ BITS=False
 QEMU=False
 BREAK="_start"
 RUN=False
+;Parse command-line arguements
 while [[ $# -gt 0 ]]; do
 	case $1 in
 		-g|--gdb)
@@ -74,15 +84,16 @@ done
 
 set -- "${POSITIONAL_ARGS[@]}" # restore positional parameters
 
+;Check if the specified file exists
 if [[ ! -f $1 ]]; then
 	echo "Specified file does not exist"
 	exit 1
 fi
-
+;set the output filename if not provided
 if [ "$OUTPUT_FILE" == "" ]; then
 	OUTPUT_FILE=${1%.*}
 fi
-
+;Displays configuration if in verbose mode
 if [ "$VERBOSE" == "True" ]; then
 	echo "Arguments being set:"
 	echo "	GDB = ${GDB}"
@@ -98,7 +109,7 @@ if [ "$VERBOSE" == "True" ]; then
 	echo "NASM started..."
 
 fi
-
+;Compile assembly code using NASM
 if [ "$BITS" == "True" ]; then
 
 	nasm -f elf64 $1 -o $OUTPUT_FILE.o && echo ""
@@ -109,38 +120,38 @@ elif [ "$BITS" == "False" ]; then
 	nasm -f elf $1 -o $OUTPUT_FILE.o && echo ""
 
 fi
-
+;Display progress if in verbose mode
 if [ "$VERBOSE" == "True" ]; then
 
 	echo "NASM finished"
 	echo "Linking ..."
 	
 fi
-
+;Display progress if in verbose mode
 if [ "$VERBOSE" == "True" ]; then
 
 	echo "NASM finished"
 	echo "Linking ..."
 fi
-
+;Link the compiled code using ld
 if [ "$BITS" == "True" ]; then
 
 	ld -m elf_x86_64 $OUTPUT_FILE.o -o $OUTPUT_FILE && echo ""
 
-
+;Link the compiled code using ld
 elif [ "$BITS" == "False" ]; then
 
 	ld -m elf_i386 $OUTPUT_FILE.o -o $OUTPUT_FILE && echo ""
 
 fi
 
-
+;Display progress if in verbose mode
 if [ "$VERBOSE" == "True" ]; then
 
 	echo "Linking finished"
 
 fi
-
+;Run the program in QEMU if QEMU flag is enabled
 if [ "$QEMU" == "True" ]; then
 
 	echo "Starting QEMU ..."
@@ -159,7 +170,7 @@ if [ "$QEMU" == "True" ]; then
 	exit 0
 	
 fi
-
+;RUn GDB flag is enabled
 if [ "$GDB" == "True" ]; then
 
 	gdb_params=()
